@@ -4,7 +4,7 @@ import { analyzeSentence, generateMatrix, evaluateStory } from './services/mistr
 import { Settings, Grid3X3, Sparkles, KeyRound, PenLine, Shuffle, Loader2, AlertCircle } from 'lucide-react';
 import StoryMatrixEditor from './components/StoryMatrixEditor';
 
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.0.2";
 
 const SetupScreen: React.FC<{ onStart: (config: StoryConfig) => void }> = ({ onStart }) => {
   const [theme, setTheme] = useState('');

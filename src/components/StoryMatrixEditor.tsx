@@ -29,6 +29,9 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
   const [checkState, setCheckState] = useState<'building' | 'checking' | 'result'>('building');
   const [validationResult, setValidationResult] = useState<SentenceAnalysis | null>(null);
 
+  // Word count calculation
+  const wordCount = story.join(' ').split(/\s+/).filter(word => word.length > 0).length;
+
   // Sharing states
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -263,7 +266,7 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
             </div>
           </div>
         )}
-        <div className="p-5 bg-[#fdfbf7] border-b border-slate-200 shadow-inner">
+        <div className="p-5 bg-[#fdfbf7] border-b border-slate-200 shadow-inner relative">
           <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Your Story</h2>
           <div className="space-y-1 text-slate-800 text-lg leading-relaxed font-serif">
             {story.length === 0 ? (
@@ -275,6 +278,12 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
             )}
             <div ref={storyEndRef} />
           </div>
+
+          {story.length > 0 && (
+            <div className="absolute bottom-2 right-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white/50 px-2 py-1 rounded-md backdrop-blur-sm border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-300">
+              {wordCount} {wordCount === 1 ? 'word' : 'words'}
+            </div>
+          )}
         </div>
 
         <div className="p-4 bg-indigo-50 border-b border-indigo-100 shadow-sm sticky top-0 z-40 backdrop-blur-md bg-indigo-50">
