@@ -85,24 +85,23 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
     setIsSharing(true);
     setShareUrl(null);
     try {
-      let token = localStorage.getItem('telegraph_token');
+      let token: string | null = localStorage.getItem('telegraph_token');
       if (!token) {
         const accRes = await fetch('https://api.telegra.ph/createAccount?short_name=StoryMatrix&author_name=Learner');
         const accData = await accRes.json();
-        if (accData.ok) {
+        if (accData.ok && accData.result?.access_token) {
           token = accData.result.access_token;
-          localStorage.setItem('telegraph_token', token);
+          if (token) localStorage.setItem('telegraph_token', token);
         }
       }
 
-      const smartTitle = await fetchSmartTitle(fullStory) || "My Story";
+      if (!token) throw new Error("Could not initialize Telegraph account");
+
+      const smartTitle: string = await fetchSmartTitle(fullStory) || "My Italian Story";
       const contentNodes = [{ tag: 'p', children: [fullStory] }];
 
-      const finalToken = token || "";
-      if (!finalToken) throw new Error("Telegraph token is missing");
-
       const formData = new FormData();
-      formData.append('access_token', finalToken);
+      formData.append('access_token', token);
       formData.append('title', smartTitle);
       formData.append('author_name', 'StoryMatrix App');
       formData.append('content', JSON.stringify(contentNodes));
@@ -110,10 +109,10 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
       const pageRes = await fetch('https://api.telegra.ph/createPage', { method: 'POST', body: formData });
       const pageData = await pageRes.json();
 
-      if (pageData.ok) {
+      if (pageData.ok && pageData.result?.url) {
         setShareUrl(pageData.result.url);
       } else {
-        throw new Error(pageData.error);
+        throw new Error(pageData.error || "Failed to create page");
       }
     } catch (error: any) {
       alert("Sharing failed: " + error.message);
