@@ -100,7 +100,7 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
 
       const formData = new FormData();
       formData.append('access_token', token!);
-      formData.append('title', smartTitle);
+      formData.append('title', smartTitle || "My Story");
       formData.append('author_name', 'StoryMatrix App');
       formData.append('content', JSON.stringify(contentNodes));
 
