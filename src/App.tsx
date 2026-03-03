@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, StoryConfig, MatrixState, MatrixData } from './types';
 import { analyzeSentence, generateMatrix, evaluateStory } from './services/mistralApi';
-import { Settings, BookOpen, Sparkles, KeyRound, PenLine, Shuffle, Loader2, AlertCircle } from 'lucide-react';
+import { Settings, Grid3X3, Sparkles, KeyRound, PenLine, Shuffle, Loader2, AlertCircle } from 'lucide-react';
 import StoryMatrixEditor from './components/StoryMatrixEditor';
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 
 const SetupScreen: React.FC<{ onStart: (config: StoryConfig) => void }> = ({ onStart }) => {
   const [theme, setTheme] = useState('');
@@ -31,7 +31,7 @@ const SetupScreen: React.FC<{ onStart: (config: StoryConfig) => void }> = ({ onS
 
       <div className="text-center mb-8">
         <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 text-indigo-600">
-          <BookOpen size={32} />
+          <Grid3X3 size={32} />
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">StoryMatrix</h1>
         <p className="text-gray-500 text-sm">Build your Italian story with an AI-powered matrix.</p>
