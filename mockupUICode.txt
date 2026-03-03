@@ -1,0 +1,464 @@
+import React, { useState } from 'react';
+import { RefreshCw, Compass, Check, Trash2, Link, Users, Zap, Box, Palette, MapPin, Loader2, Sparkles, AlertCircle, ArrowRight, Edit2, LayoutGrid } from 'lucide-react';
+
+const StoryMatrixEditor = () => {
+  const [story, setStory] = useState([
+    "Ieri sono arrivato in ufficio presto.",
+    "Il silenzio era assoluto."
+  ]);
+  
+  // Состояния сборки
+  const [currentSentence, setCurrentSentence] = useState([]);
+  const [mode, setMode] = useState('blocks'); // 'blocks' | 'text'
+  const [manualText, setManualText] = useState("");
+
+  const [globalDirection, setGlobalDirection] = useState("");
+  const [localPrompts, setLocalPrompts] = useState({ 
+    connectors: "", subjects: "", verbs: "", prepositions: "", nouns: "", adjectives: "" 
+  });
+  
+  const [loadingSections, setLoadingSections] = useState({ 
+    connectors: false, subjects: false, verbs: false, prepositions: false, nouns: false, adjectives: false 
+  });
+
+  const [checkState, setCheckState] = useState('building'); // 'building' | 'checking' | 'result'
+  const [validationResult, setValidationResult] = useState(null);
+
+  const matrixData = {
+    connectors: [
+      { id: 'c1', it: 'Improvvisamente', ru: 'Внезапно' },
+      { id: 'c2', it: 'Ma', ru: 'Но' },
+      { id: 'c3', it: 'E poi', ru: 'И потом' },
+    ],
+    subjects: [
+      { id: 's1', it: 'Io', ru: 'Я' },
+      { id: 's2', it: 'Il telefono', ru: 'Телефон' },
+      { id: 's3', it: 'Il capo', ru: 'Босс' },
+    ],
+    verbs: [
+      { 
+        group: 'слышать',
+        past: { id: 'v1_p', it: 'ho sentito', ru: 'услышал' },
+        present: { id: 'v1_pr', it: 'sento', ru: 'слышу' },
+        future: { id: 'v1_f', it: 'sentirò', ru: 'услышу' }
+      },
+      { 
+        group: 'видеть',
+        past: { id: 'v3_p', it: 'ho visto', ru: 'увидел' },
+        present: { id: 'v3_pr', it: 'vedo', ru: 'вижу' },
+        future: { id: 'v3_f', it: 'vedrò', ru: 'увижу' }
+      },
+    ],
+    prepositions: [
+      { id: 'p1', it: 'nel', ru: 'в (внутри)' },
+      { id: 'p2', it: 'sulla', ru: 'на (поверхности)' },
+      { id: 'p3', it: 'del', ru: 'кого/чего (принадл.)' },
+      { id: 'p4', it: 'verso', ru: 'по направлению к' },
+    ],
+    nouns: [
+      { id: 'n1', it: 'un rumore', ru: 'шум' },
+      { id: 'n2', it: 'la scrivania', ru: 'стол' },
+      { id: 'n3', it: 'il corridoio', ru: 'коридор' },
+      { id: 'n4', it: 'un documento', ru: 'документ' },
+    ],
+    adjectives: [
+      { id: 'a1', it: 'forte', ru: 'сильный' },
+      { id: 'a2', it: 'strano', ru: 'странный' },
+      { id: 'a3', it: 'aperto', ru: 'открытый' },
+    ]
+  };
+
+  // Переключение в текстовый режим
+  const switchToText = (overrideText = null) => {
+    const textToSet = overrideText !== null ? overrideText : currentSentence.map(w => w.it).join(' ');
+    setManualText(textToSet);
+    setMode('text');
+  };
+
+  // Возврат в режим блоков
+  const switchToBlocks = () => {
+    setMode('blocks');
+  };
+
+  // Добавление слова (работает и для блоков, и для текста)
+  const handleAddWord = (word) => {
+    if (checkState !== 'building') setCheckState('building');
+    
+    // Всегда сохраняем в блоки для консистентности
+    setCurrentSentence([...currentSentence, word]);
+    
+    // Если мы в текстовом режиме, дописываем слово в строку руками
+    if (mode === 'text') {
+      setManualText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + word.it);
+    }
+  };
+
+  const handleRemoveWord = (indexToRemove) => {
+    if (checkState !== 'building') setCheckState('building');
+    setCurrentSentence(currentSentence.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleClear = () => {
+    setCurrentSentence([]);
+    setManualText("");
+    setCheckState('building');
+  };
+
+  const handleRerollSection = (sectionId) => {
+    setLoadingSections(prev => ({ ...prev, [sectionId]: true }));
+    setTimeout(() => {
+      setLoadingSections(prev => ({ ...prev, [sectionId]: false }));
+    }, 1500);
+  };
+
+  const handleRerollAll = () => {
+    setLoadingSections({ connectors: true, subjects: true, verbs: true, prepositions: true, nouns: true, adjectives: true });
+    setTimeout(() => {
+      setLoadingSections({ connectors: false, subjects: false, verbs: false, prepositions: false, nouns: false, adjectives: false });
+    }, 2000);
+  };
+
+  const handleCheckGrammar = () => {
+    const textToCheck = mode === 'text' ? manualText.trim() : currentSentence.map(w => w.it).join(' ').trim();
+    if (!textToCheck) return;
+    
+    setCheckState('checking');
+    
+    setTimeout(() => {
+      const textToLower = textToCheck.toLowerCase();
+      
+      // Имитация ИИ: проверка ручного ввода через поиск подстрок
+      if (textToLower.includes('io') && textToLower.includes('ha squillato')) {
+        setValidationResult({
+          isCorrect: false,
+          original: textToCheck,
+          corrected: textToCheck.replace(/ha squillato/i, "ho squillato (хотя я не могу звонить) / il telefono ha squillato"),
+          explanation: "Глагол 'ha squillato' (зазвонил) — для 3-го лица. Я (Io) звонить как телефон не могу. Скорее всего, зазвонил телефон (Il telefono ha squillato)."
+        });
+      } else if (textToLower.includes('nel la') || textToLower.includes('nel scrivania')) {
+        setValidationResult({
+          isCorrect: false,
+          original: textToCheck,
+          corrected: textToCheck.replace(/nel la scrivania|nel scrivania/i, "sulla scrivania").trim() + (textToCheck.endsWith('.') ? '' : '.'),
+          explanation: "Слово 'scrivania' (стол) требует предлога 'su' (на), так как предметы лежат НА столе. Предлог 'su' сливается с артиклем 'la', образуя 'sulla'."
+        });
+      } else {
+        setValidationResult({
+          isCorrect: true,
+          original: textToCheck + (textToCheck.endsWith('.') ? '' : '.'),
+          corrected: textToCheck + (textToCheck.endsWith('.') ? '' : '.'),
+          explanation: "Замечательно! Очень естественное предложение, ошибок нет."
+        });
+      }
+      setCheckState('result');
+    }, 1500);
+  };
+
+  const handleConfirmAndAdd = (textToAdd) => {
+    setStory([...story, textToAdd]);
+    handleClear(); // Очищает и блоки, и текст
+    setMode('blocks');
+  };
+
+  const WordButton = ({ word, colorClass, onClick, disabled }) => (
+    <button 
+      onClick={() => onClick(word)}
+      disabled={disabled}
+      className={`flex flex-col items-center justify-center p-2 rounded-xl border-b-4 active:border-b-0 active:translate-y-1 transition-all ${
+        disabled ? 'opacity-50 cursor-not-allowed bg-slate-100 border-slate-200' : colorClass
+      }`}
+    >
+      <span className="font-bold text-slate-800">{word.it}</span>
+      <span className="text-[10px] text-slate-500 opacity-90 mt-0.5">{word.ru}</span>
+    </button>
+  );
+
+  const MatrixSection = ({ id, title, icon: Icon, colorTheme, children }) => {
+    const isLoading = loadingSections[id];
+    return (
+      <section className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-slate-500">
+              <Icon size={16} className={colorTheme.iconColor} />
+              <h3 className="text-xs font-bold uppercase tracking-wider">{title}</h3>
+            </div>
+          </div>
+          <div className="flex gap-2 relative z-10">
+            <input 
+              type="text" 
+              placeholder={`Уточнить...`}
+              value={localPrompts[id]}
+              onChange={(e) => setLocalPrompts(prev => ({ ...prev, [id]: e.target.value }))}
+              className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors placeholder:text-slate-400"
+            />
+            <button 
+              onClick={() => handleRerollSection(id)}
+              disabled={isLoading}
+              className={`p-1.5 rounded-lg border transition-all flex items-center justify-center min-w-[36px] ${
+                isLoading ? 'bg-slate-100 border-slate-200 text-slate-400' : `bg-white hover:bg-slate-50 text-slate-600 ${colorTheme.borderColor} shadow-sm active:scale-95`
+              }`}
+            >
+              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={14} />}
+            </button>
+          </div>
+        </div>
+        <div className={`relative transition-opacity duration-300 ${isLoading ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+          {children}
+        </div>
+        {isLoading && (
+          <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+            <span className="bg-white/90 px-3 py-1 rounded-full text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin text-indigo-500"/> Загрузка...
+            </span>
+          </div>
+        )}
+      </section>
+    );
+  };
+
+  const isBuildingEmpty = mode === 'blocks' ? currentSentence.length === 0 : manualText.trim().length === 0;
+
+  return (
+    <div className="min-h-screen bg-slate-100 flex justify-center font-sans pb-10">
+      <div className="w-full max-w-md bg-slate-50 shadow-2xl overflow-hidden flex flex-col h-screen relative">
+        
+        <div className="bg-slate-900 text-white p-4 flex justify-between items-center z-20 shadow-md shrink-0">
+          <div>
+            <h1 className="font-bold text-lg leading-tight flex items-center gap-2">
+              StoryMatrix <Sparkles size={16} className="text-blue-400" />
+            </h1>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Italiano</p>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto pb-72">
+          <div className="p-5 bg-[#fdfbf7] border-b border-slate-200 shadow-inner">
+            <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Твоя история</h2>
+            <div className="space-y-1 text-slate-800 text-lg leading-relaxed font-serif">
+              {story.map((sentence, idx) => (
+                <span key={idx} className="mr-1.5">{sentence}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 bg-indigo-50 border-b border-indigo-100 shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-indigo-50/90">
+            <label className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1 mb-2">
+              <Compass size={14}/> Общий вектор сюжета
+            </label>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Например: Абсурд, детектив..."
+                value={globalDirection}
+                onChange={(e) => setGlobalDirection(e.target.value)}
+                className="flex-1 px-3 py-2 text-sm rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white shadow-sm"
+              />
+              <button 
+                onClick={handleRerollAll}
+                disabled={Object.values(loadingSections).some(Boolean)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-all font-bold text-sm shadow-md active:scale-95 disabled:opacity-50"
+              >
+                {Object.values(loadingSections).some(Boolean) ? <Loader2 size={18} className="animate-spin" /> : <><RefreshCw size={16} className="mr-1.5"/> Все</>}
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3 space-y-4">
+            <MatrixSection id="connectors" title="Связки" icon={Link} colorTheme={{ iconColor: 'text-slate-500', borderColor: 'border-slate-300' }}>
+              <div className="flex flex-wrap gap-2">
+                {matrixData.connectors.map(word => <WordButton key={word.id} word={word} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-slate-100 border-slate-300 hover:bg-slate-200" />)}
+              </div>
+            </MatrixSection>
+
+            <MatrixSection id="subjects" title="Кто / Что" icon={Users} colorTheme={{ iconColor: 'text-indigo-500', borderColor: 'border-indigo-300' }}>
+              <div className="flex flex-wrap gap-2">
+                {matrixData.subjects.map(word => <WordButton key={word.id} word={word} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-indigo-50 border-indigo-300 hover:bg-indigo-100 text-indigo-900" />)}
+              </div>
+            </MatrixSection>
+
+            <MatrixSection id="verbs" title="Действия" icon={Zap} colorTheme={{ iconColor: 'text-amber-500', borderColor: 'border-amber-300' }}>
+              <div className="bg-slate-50 rounded-xl border border-slate-100 p-2">
+                <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2">
+                  <span>⏳ Passato</span><span>🟢 Presente</span><span>🔮 Futuro</span>
+                </div>
+                <div className="space-y-2">
+                  {matrixData.verbs.map((verbRow, idx) => (
+                    <div key={idx} className="grid grid-cols-3 gap-2">
+                      <WordButton word={verbRow.past} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-amber-50 border-amber-300 hover:bg-amber-100" />
+                      <WordButton word={verbRow.present} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-emerald-50 border-emerald-300 hover:bg-emerald-100" />
+                      <WordButton word={verbRow.future} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-blue-50 border-blue-300 hover:bg-blue-100" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </MatrixSection>
+
+            <MatrixSection id="prepositions" title="Предлоги / Артикли" icon={MapPin} colorTheme={{ iconColor: 'text-fuchsia-500', borderColor: 'border-fuchsia-300' }}>
+              <div className="flex flex-wrap gap-2">
+                {matrixData.prepositions.map(word => <WordButton key={word.id} word={word} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-fuchsia-50 border-fuchsia-300 hover:bg-fuchsia-100 text-fuchsia-900" />)}
+              </div>
+            </MatrixSection>
+
+            <MatrixSection id="nouns" title="Существительные" icon={Box} colorTheme={{ iconColor: 'text-rose-500', borderColor: 'border-rose-300' }}>
+              <div className="flex flex-wrap gap-2">
+                {matrixData.nouns.map(word => <WordButton key={word.id} word={word} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-rose-50 border-rose-300 hover:bg-rose-100" />)}
+              </div>
+            </MatrixSection>
+
+            <MatrixSection id="adjectives" title="Прилагательные" icon={Palette} colorTheme={{ iconColor: 'text-teal-500', borderColor: 'border-teal-300' }}>
+              <div className="flex flex-wrap gap-2">
+                {matrixData.adjectives.map(word => <WordButton key={word.id} word={word} onClick={handleAddWord} disabled={checkState !== 'building'} colorClass="bg-teal-50 border-teal-300 hover:bg-teal-100 text-teal-900" />)}
+              </div>
+            </MatrixSection>
+          </div>
+        </div>
+
+        {/* СМАРТ-ФУТЕР СО СБОРКОЙ И ПРОВЕРКОЙ */}
+        <div className="absolute bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-15px_40px_rgba(0,0,0,0.1)] z-30 transition-all duration-300">
+          
+          {checkState === 'building' && (
+            <div className="p-4 pb-safe animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex justify-between items-end mb-2">
+                <h2 className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
+                  Сборка предложения {mode === 'text' && <span className="text-slate-400 lowercase font-normal">(ручной ввод)</span>}
+                </h2>
+                
+                {/* Панель переключения режимов */}
+                <div className="flex gap-4">
+                  {mode === 'blocks' ? (
+                    <button onClick={() => switchToText()} className="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center gap-1 transition-colors">
+                      <Edit2 size={12}/> В текст
+                    </button>
+                  ) : (
+                    <button onClick={switchToBlocks} className="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center gap-1 transition-colors">
+                      <LayoutGrid size={12}/> В блоки
+                    </button>
+                  )}
+                  
+                  {!isBuildingEmpty && (
+                    <button onClick={handleClear} className="text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+                      <Trash2 size={12}/> Очистить
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Область ввода: Блоки ИЛИ Текстовое поле */}
+              {mode === 'blocks' ? (
+                <div className="min-h-[56px] bg-slate-50 border border-slate-200 rounded-xl p-2 flex flex-wrap gap-2 items-center mb-4">
+                  {currentSentence.length === 0 ? (
+                    <span className="text-slate-400 text-sm italic w-full text-center">Кликай по словам выше...</span>
+                  ) : (
+                    currentSentence.map((word, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={() => handleRemoveWord(idx)}
+                        className="bg-white border border-slate-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
+                      >
+                        {word.it}
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  value={manualText}
+                  onChange={(e) => setManualText(e.target.value)}
+                  placeholder="Печатай здесь или кликай по словам выше..."
+                  className="w-full min-h-[64px] bg-white border border-slate-300 rounded-xl p-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none mb-4 shadow-inner"
+                  rows={2}
+                />
+              )}
+
+              {/* Кнопка проверки единая для обоих режимов */}
+              <button 
+                onClick={handleCheckGrammar}
+                disabled={isBuildingEmpty}
+                className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
+                  !isBuildingEmpty 
+                    ? 'bg-slate-900 hover:bg-black text-white shadow-lg active:scale-[0.98]' 
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                <Sparkles size={18} className={!isBuildingEmpty ? "text-blue-400" : ""} /> Проверить грамматику
+              </button>
+            </div>
+          )}
+
+          {checkState === 'checking' && (
+            <div className="p-8 pb-safe flex flex-col items-center justify-center gap-4 animate-in fade-in">
+              <Loader2 className="animate-spin text-blue-500" size={32} />
+              <p className="text-sm font-medium text-slate-500 animate-pulse">Нейросеть читает твой текст...</p>
+            </div>
+          )}
+
+          {checkState === 'result' && validationResult && (
+            <div className="p-4 pb-safe animate-in slide-in-from-bottom-4">
+              {validationResult.isCorrect ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">
+                      <Check size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-emerald-900 text-sm mb-1">Отлично написано!</h4>
+                      <p className="text-emerald-700 text-sm mb-2">{validationResult.explanation}</p>
+                      <div className="text-lg font-serif font-bold text-slate-800">
+                        {validationResult.corrected}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-orange-100 p-2 rounded-full text-orange-600 shrink-0">
+                      <AlertCircle size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-orange-900 text-sm mb-1">Тут есть нюанс</h4>
+                      <p className="text-orange-800 text-sm leading-relaxed mb-3">
+                        {validationResult.explanation}
+                      </p>
+                      <div className="bg-white/60 border border-orange-100 rounded-lg p-2">
+                        <p className="text-[10px] text-orange-500 uppercase tracking-wider font-bold mb-1">Исправленный вариант:</p>
+                        <p className="text-lg font-serif font-bold text-slate-800 flex items-center gap-2">
+                          {validationResult.corrected}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    // Возвращаем исправленный текст в поле для ручной доработки
+                    switchToText(validationResult.corrected);
+                    setCheckState('building');
+                  }}
+                  className="flex-1 py-3.5 rounded-xl font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors text-sm flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Edit2 size={16} /> Изменить
+                </button>
+                <button 
+                  onClick={() => handleConfirmAndAdd(validationResult.corrected)}
+                  className={`flex-[1.5] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-white text-sm shadow-lg active:scale-[0.98] ${
+                    validationResult.isCorrect ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
+                >
+                  В историю <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StoryMatrixEditor;
