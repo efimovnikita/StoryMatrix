@@ -19,7 +19,7 @@ const SetupScreen: React.FC<{ onStart: (config: StoryConfig) => void }> = ({ onS
   };
 
   return (
-    <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-indigo-50 relative animate-in fade-in slide-in-from-bottom-4">
+    <div className="max-w-md md:max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border border-indigo-50 relative animate-in fade-in slide-in-from-bottom-4">
       <div className="absolute top-6 right-6">
         <button
           onClick={() => setShowSettings(!showSettings)}

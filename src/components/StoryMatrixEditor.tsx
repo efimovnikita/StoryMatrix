@@ -215,7 +215,7 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
   const isBuildingEmpty = mode === 'blocks' ? currentSentence.length === 0 : manualText.trim().length === 0;
 
   return (
-    <div className="w-full max-w-md bg-slate-50 shadow-2xl overflow-hidden flex flex-col h-[100vh] md:h-[90vh] md:rounded-3xl relative">
+    <div className="w-full md:max-w-3xl bg-slate-50 shadow-2xl overflow-hidden flex flex-col h-[100vh] md:h-[90vh] md:rounded-3xl relative">
       
       <div className="bg-slate-900 text-white p-4 flex justify-between items-center z-50 shadow-md shrink-0">
         <div>
@@ -402,7 +402,7 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
       </div>
 
       <div className="absolute bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-15px_40px_rgba(0,0,0,0.1)] z-30 transition-all duration-300">
-        <div className="p-4 pb-safe animate-in fade-in slide-in-from-bottom-2">
+        <div className="p-4 pb-7 animate-in fade-in slide-in-from-bottom-2">
           
           {/* AI Feedback Panel (Visible if we have a result) */}
           {validationResult && (
