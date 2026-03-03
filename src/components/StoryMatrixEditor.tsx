@@ -95,12 +95,15 @@ const StoryMatrixEditor: React.FC<StoryMatrixEditorProps> = ({ initialData, stor
         }
       }
 
-      const smartTitle = await fetchSmartTitle(fullStory);
+      const smartTitle = await fetchSmartTitle(fullStory) || "My Story";
       const contentNodes = [{ tag: 'p', children: [fullStory] }];
 
+      const finalToken = token || "";
+      if (!finalToken) throw new Error("Telegraph token is missing");
+
       const formData = new FormData();
-      formData.append('access_token', token!);
-      formData.append('title', smartTitle || "My Story");
+      formData.append('access_token', finalToken);
+      formData.append('title', smartTitle);
       formData.append('author_name', 'StoryMatrix App');
       formData.append('content', JSON.stringify(contentNodes));
 
